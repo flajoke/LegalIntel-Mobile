@@ -1,0 +1,27 @@
+:root {
+  --legalintel-accent: #2878b6;
+  --legalintel-scrollbar: #8daec9;
+  --legalintel-scrollbar-hover: #527fa3;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--legalintel-scrollbar) transparent;
+}
+
+*::-webkit-scrollbar { width: 8px; height: 8px; }
+*::-webkit-scrollbar-track, *::-webkit-scrollbar-corner { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: var(--legalintel-scrollbar);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover { background-color: var(--legalintel-scrollbar-hover); }
+
+input, textarea { caret-color: var(--legalintel-accent); }
+:focus-visible { outline-color: var(--legalintel-accent); }
+
+@media (forced-colors: active) {
+  * { scrollbar-color: auto; }
+}
