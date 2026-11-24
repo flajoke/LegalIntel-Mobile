@@ -72,6 +72,6 @@ const styles = StyleSheet.create({
   iconButton: { minWidth: 44, minHeight: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   button: { minHeight: 50, paddingHorizontal: 20, paddingVertical: 14, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   dialogBackdrop: { flex: 1, justifyContent: 'center', padding: 24 },
-  dialogCard: { width: '100%', maxWidth: 420, alignSelf: 'center', borderRadius: 26, padding: 22, borderWidth: StyleSheet.hairlineWidth },
+  dialogCard: { width: '100%', maxWidth: 520, maxHeight: '92%', alignSelf: 'center', borderRadius: 26, padding: 22, borderWidth: StyleSheet.hairlineWidth },
   dialogTitle: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 14 },
 });

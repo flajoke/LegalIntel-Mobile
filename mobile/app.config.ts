@@ -8,7 +8,7 @@ const config: ExpoConfig = {
   name: 'LegalIntel',
   slug: 'legalintel',
   scheme: 'legalintel',
-  version: '0.1.0',
+  version: '0.6.0',
   orientation: 'default',
   userInterfaceStyle: 'automatic',
   icon: './assets/logo.png',
@@ -30,6 +30,7 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     'expo-font',
+    'expo-secure-store',
     ['expo-splash-screen', {
       image: './assets/logo.png', imageWidth: 100,
       resizeMode: 'contain', backgroundColor: '#F7FAFD',

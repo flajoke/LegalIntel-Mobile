@@ -10,6 +10,7 @@ import Feather from '@expo/vector-icons/Feather';
 import { chatStore, useChatState } from '@/state/chatStore';
 import { ThemeProvider, useTheme } from '@/ui/theme';
 import { Button, ConfirmButton, LegalMark } from '@/ui/Primitives';
+import { AuthGate } from '@/features/account/AuthGate';
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -38,11 +39,14 @@ function RootNavigator() {
     <Stack.Screen name="(chat)" />
     <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
     <Stack.Screen name="history" options={{ animation: 'none' }} />
+    <Stack.Screen name="knowledge" />
+    <Stack.Screen name="analysis" />
+    <Stack.Screen name="documents" />
   </Stack></>;
 }
 
 export default function RootLayout() {
-  return <GestureHandlerRootView style={{ flex: 1 }}><SafeAreaProvider><ThemeProvider><RootNavigator /></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
+  return <GestureHandlerRootView style={{ flex: 1 }}><SafeAreaProvider><ThemeProvider><AuthGate><RootNavigator /></AuthGate></ThemeProvider></SafeAreaProvider></GestureHandlerRootView>;
 }
 
 export function ErrorBoundary({ retry }: ErrorBoundaryProps) {

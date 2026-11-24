@@ -1,0 +1,126 @@
+{
+  "version": "salary-rules-2026-v1",
+  "valid_from": "2026-01-01",
+  "checked_through": "2026-11-24",
+  "legal_reviewed": false,
+  "norms": {
+    "tk-16": {
+      "sha256": "819c276450e5caa7a5f146cdc66e6dc2b01741b308463db6f29a7d6938cc6fe6",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/3c92ae8cb5e74f9f61fa1592dc431e3747b65015/",
+      "page_sha256": "26f01b775c44909bf8b7069ea2f862bbad03da09a472ead10930a5daf99f2276"
+    },
+    "tk-19.1": {
+      "sha256": "5e7baf787c2574fbde4138d2445105a8a977fbba766f8079d9612f6ba0e59cbf",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/dba397c0021ffd3e62706480495a4a53ea74f0ce/",
+      "page_sha256": "247c795206218c54a662b559f296e19976d580c1b465d9824d565f7a663472d2"
+    },
+    "tk-62": {
+      "sha256": "26f26abeac9f1211aae3d279ad7d515aa5683e8d5f838de7b5a8e05dd79f1a56",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/a302936f3dc61c4dbbf9969d5a5f370e2b846e32/",
+      "page_sha256": "66ac7c1bbe6a5df3ab9957f2b495a7b2d0529daccf3baaa809952933e05854c8"
+    },
+    "tk-67": {
+      "sha256": "7dd09a62d290ae191516a969b3d7d027f23b4cb3c42029c5de710e8f4febd490",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/6078748fd8dbb18fea7eae954601330d205c3c79/",
+      "page_sha256": "2a09288196504310051a716ccb70c234ba80995cf25dc64513139edf288b23e3"
+    },
+    "tk-136": {
+      "sha256": "c499eea32fd02c8e0bcc0e6a95310adae5e8a49218633b1427d04d37904182b1",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/a0a891ee650687026ef53d5d1194983419be6793/",
+      "page_sha256": "e3a5d3a35885558f6dbdea21460680993ae7046de7c44700dcc6b09224084bcb"
+    },
+    "tk-140": {
+      "sha256": "245b622d201c97648c4940a1aba7cd9d6af25a34e457c39c1e1573484c320907",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/274f022222909efcef192f7615b143e34309164f/",
+      "page_sha256": "69b0f6375c9b5e2a15e1461e96747965db6bf43648f9f4ba5f998754074ea12d"
+    },
+    "tk-142": {
+      "sha256": "6265d2d23f0b6323160ac68272edae61bd05ab2b716675dccef6950e021a9d39",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/67f5b7767847d2483a67262f342f35cf922855a2/",
+      "page_sha256": "198ef0476ae62c8a599c88d613eb449b0fcb17dc002ebc20113a70eafefa9c85"
+    },
+    "tk-236": {
+      "sha256": "ee318427521b24f1cb2abee1f45ecf4fe1de2b938b8169056a07cbbc4f7052eb",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/7c8d2fe49f0c8b8d13723803f2e82228f99b6d7e/",
+      "page_sha256": "6d0d50461de0d056509317dfa81375c1799e3adecf178cc63f14acdb1267e6f2"
+    },
+    "tk-352": {
+      "sha256": "19408fd70047165a8b6f6b96932cab11be5938d6c61e9d209a4126155e964c9e",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/4b07ec615bc5f7ca99a620c9e9767f845ea9a463/",
+      "page_sha256": "4d3078c773bbf3998c7944a2bd39c279ca9529fb4378bdd5f1f4fb262efb1358"
+    },
+    "tk-356": {
+      "sha256": "3d8cd4c40fe82fc4e91b6085bab0aa4997f38e910fdbf13d49d83bddc8542c85",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/e1d3302610bfe8a8ec24f33c3029360eeab27635/",
+      "page_sha256": "94d0e97a514fc7b24fb975050cdaefe512ad9f68f15e565fc4d6f5ebc1b74c46"
+    },
+    "tk-392": {
+      "sha256": "fea280628f7f9053adaab30c78066cf4462592a0c32c83a31ddc8e2128e58574",
+      "source_url": "https://www.consultant.ru/document/cons_doc_LAW_34683/eff4cd3e27ee6ffdc716306e3cab5c403c3c2dcb/",
+      "page_sha256": "cbddd3b028d530feef33b59b4bfe4afe5a0171ea3e9799b406efc4035396d4d0"
+    }
+  },
+  "rates": {
+    "source_url": "https://www.cbr.ru/hd_base/KeyRate/?UniDbQuery.Posted=True&UniDbQuery.From=01.12.2025&UniDbQuery.To=24.11.2026",
+    "page_sha256": "bb0bdb187365aca4c1761b374276b9cd8005d5cce4fb2983b4e30cd6a2b1a59a",
+    "valid_from": "2026-01-01",
+    "valid_through": "2026-11-24",
+    "periods": [
+      {
+        "from": "2025-12-01",
+        "percent": "16.50"
+      },
+      {
+        "from": "2025-12-22",
+        "percent": "16.00"
+      },
+      {
+        "from": "2026-02-16",
+        "percent": "15.50"
+      },
+      {
+        "from": "2026-03-23",
+        "percent": "15.00"
+      },
+      {
+        "from": "2026-04-27",
+        "percent": "14.50"
+      },
+      {
+        "from": "2026-06-22",
+        "percent": "14.25"
+      },
+      {
+        "from": "2026-07-27",
+        "percent": "14.00"
+      }
+    ]
+  },
+  "calendar": {
+    "source_url": "https://www.cbr.ru/other/holidays/",
+    "checked_on": "2026-11-24",
+    "years": {
+      "2025": {
+        "extra_days_off": [
+          "05-02",
+          "05-08",
+          "06-13",
+          "11-03",
+          "12-31"
+        ],
+        "extra_workdays": [
+          "11-01"
+        ]
+      },
+      "2026": {
+        "extra_days_off": [
+          "01-09",
+          "03-09",
+          "05-11",
+          "12-31"
+        ],
+        "extra_workdays": []
+      }
+    }
+  }
+}

@@ -5,6 +5,7 @@ import { chatStore, useChatState } from '@/state/chatStore';
 import type { ThemePreference } from '@/domain/chat';
 import { Button, ConfirmButton, Icon, IconButton, LegalMark } from '@/ui/Primitives';
 import { useTheme } from '@/ui/theme';
+import { AccountPanel } from '@/features/account/AccountPanel';
 
 export function SettingsScreen() {
   const theme = useTheme();
@@ -20,7 +21,8 @@ export function SettingsScreen() {
       <IconButton name="x" label="Закрыть настройки" onPress={() => router.canGoBack() ? router.back() : router.replace('/')} /></View>
     <ScrollView indicatorStyle={theme.dark ? 'white' : 'black'} contentContainerStyle={styles.content}>
       <View style={styles.about}><LegalMark size={47} /><View style={{ flex: 1, gap: 6 }}><Text style={{ color: theme.text, fontSize: 20, fontWeight: '600', letterSpacing: -0.4 }}>LegalIntel</Text>
-        <Text style={{ color: theme.secondary, fontSize: 13 }}>Демо-режим</Text></View></View>
+      </View></View>
+      <AccountPanel />
       <Text style={[styles.label, { color: theme.secondary }]}>ОФОРМЛЕНИЕ</Text>
       <View style={[styles.card, { backgroundColor: theme.surface }]}>{preferences.map((preference, i) => <Pressable key={preference.value} accessibilityRole="radio" accessibilityLabel={preference.label}
         accessibilityState={{ checked: data.settings.theme === preference.value }} onPress={() => void chatStore.saveSettings({ ...data.settings, theme: preference.value })}
@@ -33,7 +35,7 @@ export function SettingsScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}><Icon name="message-square" size={18} color={theme.secondary} />
           <Text style={{ color: theme.text, fontSize: 16 }}>Всего чатов: {data.conversations.length}</Text></View>
         <ConfirmButton label="Удалить все чаты" title="Удалить всю историю?" disabled={!data.conversations.length && !data.newDraft}
-          description="Все диалоги, сообщения и черновики будут удалены. Это действие нельзя отменить."
+          description="Все диалоги, сообщения и черновики этого аккаунта будут удалены на устройстве и при синхронизации на сервере. Это действие нельзя отменить."
           action={() => void chatStore.clearChats()} />
       </View>
       {storageError && <View accessibilityLiveRegion="assertive" style={{ gap: 10, marginTop: 18 }}><Text style={{ color: theme.danger, lineHeight: 21 }}>{storageError}</Text><Button secondary onPress={() => void chatStore.retrySave()}>Повторить сохранение</Button></View>}

@@ -1,3 +1,3 @@
-"""LegalIntel backend, stages 1–3."""
+"""LegalIntel backend: chat, fact collection, optional AI and separate legal checks."""
 
-__version__ = "0.1.0"
+__version__ = "0.6.0"
