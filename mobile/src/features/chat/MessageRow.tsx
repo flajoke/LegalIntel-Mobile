@@ -4,6 +4,8 @@ import * as Clipboard from 'expo-clipboard';
 import type { Message } from '@/domain/chat';
 import { Icon, LegalMark } from '@/ui/Primitives';
 import { useTheme } from '@/ui/theme';
+import { SourceViewer } from '@/features/knowledge/SourceViewer';
+import type { LegalSource } from '@/domain/salary';
 
 export function MessageRow({ message, isLast, onRetry, onEdit }: {
   message: Message; isLast: boolean; onRetry: () => void; onEdit: () => void;
@@ -11,6 +13,7 @@ export function MessageRow({ message, isLast, onRetry, onEdit }: {
   const theme = useTheme();
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState(false);
+  const [source, setSource] = useState<LegalSource | null>(null);
   const isUser = message.role === 'user';
   const copy = async () => {
     try { await Clipboard.setStringAsync(message.content); setCopied(true); setCopyError(false); }
@@ -18,10 +21,17 @@ export function MessageRow({ message, isLast, onRetry, onEdit }: {
   };
   return <View style={[styles.outer, isUser ? styles.userOuter : null]}>
     {!isUser && <View style={styles.author}><LegalMark size={27} /><Text style={[styles.authorName, { color: theme.text }]}>LegalIntel</Text>
-      <Text style={[styles.mode, { color: theme.secondary }]}>Демо-режим</Text></View>}
+      {message.mode === 'ai' && <Text style={[styles.mode, { color: theme.secondary }]}>AI</Text>}</View>}
     <View style={[isUser ? styles.userBubble : styles.assistantBody, isUser && { backgroundColor: theme.bubble }]}>
       <Text selectable style={[styles.message, { color: theme.text }]}>{message.content}</Text>
     </View>
+    {!isUser && !!message.sources?.length && <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+      {message.sources.map(item => <Pressable key={item.chunk_id} accessibilityRole="button" accessibilityLabel={`Прочитать ${item.citation}`}
+        onPress={() => setSource(item)} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 14, borderRadius: 12,
+          backgroundColor: theme.accentSoft, opacity: pressed ? 0.65 : 1 })}>
+        <Text style={{ color: theme.accent, fontSize: 13 }}>{item.citation}</Text>
+      </Pressable>)}
+    </View>}
     {!isUser && <Pressable accessibilityRole="button" accessibilityLabel={copied ? 'Ответ скопирован' : 'Скопировать ответ'}
       onPress={() => void copy()} style={({ pressed }) => [styles.copy, { opacity: pressed ? 0.5 : 1 }]}>
       <Icon name={copied ? 'check' : 'copy'} size={15} color={theme.muted} />
@@ -34,6 +44,7 @@ export function MessageRow({ message, isLast, onRetry, onEdit }: {
         <Pressable onPress={onEdit} accessibilityRole="button" style={styles.textAction}><Text style={{ color: theme.danger, fontWeight: '500' }}>Изменить</Text></Pressable>
       </View>}
     </View>}
+    {source && <SourceViewer source={source} onClose={() => setSource(null)} />}
   </View>;
 }
 const styles = StyleSheet.create({

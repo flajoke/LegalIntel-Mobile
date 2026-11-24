@@ -7,7 +7,10 @@ export type Message = {
   status: 'pending' | 'sent' | 'failed';
   error?: string;
   inReplyTo?: string;
-  mode?: 'stub';
+  mode?: 'stub' | 'guided' | 'ai';
+  scenarioAction?: SalaryAction;
+  aiAction?: AIAction;
+  sources?: SourceExcerpt[];
 };
 
 export type Conversation = {
@@ -17,10 +20,16 @@ export type Conversation = {
   updatedAt: string;
   draft: string;
   messages: Message[];
+  scenario?: 'salary_delay';
+  salaryCase?: SalaryCase;
+  assistantMode?: 'ai' | 'guided';
+  aiCandidates?: AICandidate[];
+  salaryAnalysis?: SavedAnalysisOptions;
+  documentDrafts?: DocumentDraft[];
 };
 
 export type StoredData = {
-  version: 1;
+  version: 3;
   conversations: Conversation[];
   activeId: string | null;
   newDraft: string;
@@ -29,7 +38,7 @@ export type StoredData = {
 };
 
 export function emptyData(): StoredData {
-  return { version: 1, conversations: [], activeId: null, newDraft: '', settings: { apiUrl: '', theme: 'system' } };
+  return { version: 3, conversations: [], activeId: null, newDraft: '', settings: { apiUrl: '', theme: 'system' } };
 }
 
 export const MAX_MESSAGE_LENGTH = 4000;
@@ -47,3 +56,7 @@ export function contextFor(messages: Message[]) {
   }
   return history;
 }
+import type { SalaryAction, SalaryCase, SourceExcerpt } from './salary';
+import type { AIAction, AICandidate } from './ai';
+import type { SavedAnalysisOptions } from './analysis';
+import type { DocumentDraft } from './documents';

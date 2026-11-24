@@ -1,56 +1,71 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { emptyData, type Conversation, type Message, type StoredData } from '@/domain/chat';
+import { emptyData, type StoredData } from '@/domain/chat';
+import { isExcerpt, isSalaryAction, isSalaryCase, record } from '@/domain/salary';
+import { isAIAction, isCandidate } from '@/domain/ai';
+import { isSavedAnalysisOptions } from '@/domain/analysis';
+import { isDocumentDraft, MAX_DOCUMENTS } from '@/domain/documents';
 
-const STORAGE_KEY = '@legalintel/chats/v1';
-const LEGACY_STUB_REPLY = 'Сообщение получено. Сейчас я отвечаю в демонстрационном режиме.\n\n'
-  + 'Разбор вашей ситуации, ссылки на нормы закона и рекомендации появятся в следующей версии LegalIntel.';
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-function validDate(value: unknown): value is string {
-  return typeof value === 'string' && Number.isFinite(Date.parse(value));
-}
-function isMessage(value: unknown): value is Message {
-  return isRecord(value) && typeof value.id === 'string' && typeof value.content === 'string'
-    && ['user', 'assistant'].includes(String(value.role)) && validDate(value.createdAt)
-    && ['pending', 'sent', 'failed'].includes(String(value.status))
-    && (value.error === undefined || typeof value.error === 'string')
-    && (value.inReplyTo === undefined || typeof value.inReplyTo === 'string')
-    && (value.mode === undefined || value.mode === 'stub');
-}
-function isConversation(value: unknown): value is Conversation {
-  return isRecord(value) && typeof value.id === 'string' && typeof value.title === 'string'
-    && typeof value.draft === 'string' && validDate(value.createdAt) && validDate(value.updatedAt)
-    && Array.isArray(value.messages) && value.messages.every(isMessage);
-}
-
+const KEY = '@legalintel/chats/v3';
+const LEGACY_KEYS = ['@legalintel/chats/v2', '@legalintel/chats/v1'];
 export interface ChatRepository {
   load(): Promise<StoredData>;
   save(data: StoredData): Promise<void>;
   reset(): Promise<void>;
 }
-
+const stringFields = (v: Record<string, unknown>, fields: string[]) => fields.every(k => typeof v[k] === 'string');
+function validMessage(v: unknown): boolean {
+  return record(v) && stringFields(v, ['id', 'content', 'createdAt'])
+    && ['user', 'assistant'].includes(String(v.role)) && ['sent', 'pending', 'failed'].includes(String(v.status))
+    && (v.error === undefined || typeof v.error === 'string') && (v.inReplyTo === undefined || typeof v.inReplyTo === 'string')
+    && (v.mode === undefined || ['stub', 'guided', 'ai'].includes(String(v.mode)))
+    && (v.scenarioAction === undefined || isSalaryAction(v.scenarioAction))
+    && (v.aiAction === undefined || isAIAction(v.aiAction))
+    && (v.sources === undefined || (Array.isArray(v.sources) && v.sources.every(isExcerpt)));
+}
+export function decodeChatData(raw: string): StoredData {
+  const v: unknown = JSON.parse(raw);
+  if (!record(v) || typeof v.version !== 'number' || ![1, 2, 3].includes(v.version)
+    || !Array.isArray(v.conversations) || !v.conversations.every(c => record(c)
+      && stringFields(c, ['id', 'title', 'createdAt', 'updatedAt', 'draft'])
+      && Array.isArray(c.messages) && c.messages.every(validMessage)
+      && (c.scenario === undefined || c.scenario === 'salary_delay')
+      && (c.salaryCase === undefined || isSalaryCase(c.salaryCase))
+      && (c.assistantMode === undefined || ['ai', 'guided'].includes(String(c.assistantMode)))
+      && (c.aiCandidates === undefined || (Array.isArray(c.aiCandidates) && c.aiCandidates.every(isCandidate)))
+      && (c.salaryAnalysis === undefined || isSavedAnalysisOptions(c.salaryAnalysis))
+      && (c.documentDrafts === undefined || (Array.isArray(c.documentDrafts) && c.documentDrafts.length <= MAX_DOCUMENTS && c.documentDrafts.every(isDocumentDraft))))
+    || (v.activeId !== null && typeof v.activeId !== 'string') || typeof v.newDraft !== 'string'
+    || !record(v.settings) || typeof v.settings.apiUrl !== 'string'
+    || !['system', 'light', 'dark'].includes(String(v.settings.theme))) {
+    throw new Error('Неподдерживаемый или повреждённый формат истории');
+  }
+  return { ...v, version: 3 } as StoredData;
+}
 export const chatRepository: ChatRepository = {
   async load() {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (raw === null) return emptyData();
-    const data: unknown = JSON.parse(raw);
-    if (!isRecord(data) || data.version !== 1 || !Array.isArray(data.conversations)
-      || !data.conversations.every(isConversation) || typeof data.newDraft !== 'string'
-      || !(data.activeId === null || typeof data.activeId === 'string')
-      || !isRecord(data.settings) || typeof data.settings.apiUrl !== 'string'
-      || !['system', 'light', 'dark'].includes(String(data.settings.theme))) {
-      // Never silently overwrite corrupt data or a future schema version.
-      throw new Error('Не удалось прочитать сохранённые чаты. Данные не изменены.');
+    let raw = await AsyncStorage.getItem(KEY);
+    if (raw !== null) return decodeChatData(raw);
+    for (const oldKey of LEGACY_KEYS) {
+      raw = await AsyncStorage.getItem(oldKey);
+      if (raw === null) continue;
+      const data = decodeChatData(raw);
+      // Commit before removal: a failed migration never destroys the old history.
+      await AsyncStorage.setItem(KEY, JSON.stringify(data));
+      await AsyncStorage.multiRemove(LEGACY_KEYS);
+      return data;
     }
-    const stored = data as StoredData;
-    // Remove only the exact retired placeholder; user text and other replies stay intact.
-    return { ...stored, conversations: stored.conversations.map(chat => ({ ...chat,
-      messages: chat.messages.map(message => message.role === 'assistant' && message.mode === 'stub' && message.content === LEGACY_STUB_REPLY
-        ? { ...message, content: LEGACY_STUB_REPLY.split('\n\n')[0]! } : message),
-    })) };
+    return emptyData();
   },
-  async save(data) { await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data)); },
-  async reset() { await AsyncStorage.removeItem(STORAGE_KEY); },
+  save: data => AsyncStorage.setItem(KEY, JSON.stringify(data)),
+  reset: () => AsyncStorage.multiRemove([KEY, ...LEGACY_KEYS]),
 };
+
+export function accountRepository(userId: string): ChatRepository {
+  if (!/^[a-f0-9-]{36}$/i.test(userId)) throw new Error('Некорректный аккаунт');
+  const key = `@legalintel/account/${userId}/chats/v3`;
+  return {
+    async load() { const raw = await AsyncStorage.getItem(key); return raw === null ? emptyData() : decodeChatData(raw); },
+    save: data => AsyncStorage.setItem(key, JSON.stringify(data)),
+    reset: () => AsyncStorage.removeItem(key),
+  };
+}

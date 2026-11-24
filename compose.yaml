@@ -10,9 +10,13 @@ services:
     init: true
     restart: unless-stopped
     read_only: true
+    volumes:
+      - knowledge-data:/app/data
     tmpfs:
       - /tmp
     cap_drop:
       - ALL
     security_opt:
       - no-new-privileges:true
+volumes:
+  knowledge-data:

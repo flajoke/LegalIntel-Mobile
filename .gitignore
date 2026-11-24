@@ -15,3 +15,5 @@ __pycache__/
 .idea/
 .vscode/
 build/
+backend/data/
+*.sqlite3*

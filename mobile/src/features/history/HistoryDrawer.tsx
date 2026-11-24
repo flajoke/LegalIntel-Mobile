@@ -44,6 +44,9 @@ export function HistoryDrawer({ onClose, showClose }: { onClose: () => void; sho
       ListEmptyComponent={<View style={styles.empty}><Icon name={query ? 'search' : 'message-circle'} size={25} color={theme.muted} />
         <Text style={{ textAlign: 'center', color: theme.secondary, lineHeight: 22 }}>{query ? 'Чаты не найдены' : 'Здесь будут ваши диалоги'}</Text></View>} />
     <View style={[styles.bottom, { borderTopColor: theme.border }]}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Правовая база" onPress={() => { Keyboard.dismiss(); if (showClose) router.replace('/knowledge'); else router.push('/knowledge'); }} style={styles.settings}>
+        <View style={[styles.settingsIcon, { backgroundColor: theme.bubble }]}><Icon name="book-open" size={19} /></View>
+        <Text style={{ flex: 1, color: theme.text, fontSize: 15 }}>Правовая база</Text><Icon name="chevron-right" size={17} color={theme.muted} /></Pressable>
       <Pressable accessibilityRole="button" accessibilityLabel="Настройки" onPress={() => { Keyboard.dismiss(); onClose(); router.push('/settings'); }} style={styles.settings}>
         <View style={[styles.settingsIcon, { backgroundColor: theme.bubble }]}><Icon name="settings" size={19} /></View>
         <Text style={{ flex: 1, color: theme.text, fontSize: 15 }}>Настройки</Text><Icon name="chevron-right" size={17} color={theme.muted} /></Pressable>

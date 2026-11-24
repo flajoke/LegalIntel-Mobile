@@ -2,38 +2,17 @@
   "openapi": "3.1.0",
   "info": {
     "title": "LegalIntel API",
-    "description": "Технический прототип LegalIntel. Ответы — заглушки, юридический анализ не выполняется.",
-    "version": "0.1.0"
+    "description": "LegalIntel: сбор подтверждённых фактов, AI/RAG и отдельная предварительная оценка выплаты по детерминированным правилам без LLM.",
+    "version": "0.6.0"
   },
   "paths": {
-    "/health": {
-      "get": {
-        "tags": [
-          "system"
-        ],
-        "summary": "Health",
-        "operationId": "health_health_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/chat": {
       "post": {
         "tags": [
           "chat"
         ],
         "summary": "Получить демонстрационный ответ LegalIntel",
-        "description": "Без AI, аккаунтов и серверной БД. Историю хранит клиент и передаёт ограниченный контекст.",
+        "description": "Общий чат без AI. Историю хранит клиент. Сценарий зарплаты доступен через /salary-delay/turn.",
         "operationId": "chat_api_v1_chat_post",
         "requestBody": {
           "content": {
@@ -78,10 +57,962 @@
           }
         }
       }
+    },
+    "/api/v1/salary-delay/turn": {
+      "post": {
+        "tags": [
+          "salary-delay"
+        ],
+        "summary": "Следующий шаг сбора фактов о выплате",
+        "operationId": "salary_turn_api_v1_salary_delay_turn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalaryRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalaryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge": {
+      "get": {
+        "tags": [
+          "knowledge"
+        ],
+        "summary": "Knowledge Index",
+        "operationId": "knowledge_index_api_v1_knowledge_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeIndex"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/salary-delay/analysis": {
+      "post": {
+        "tags": [
+          "salary-delay"
+        ],
+        "summary": "Предварительная оценка подтверждённых фактов без LLM",
+        "operationId": "salary_analysis_api_v1_salary_delay_analysis_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge/search": {
+      "get": {
+        "tags": [
+          "knowledge"
+        ],
+        "summary": "Knowledge Search",
+        "operationId": "knowledge_search_api_v1_knowledge_search_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300,
+              "title": "Q"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 30,
+              "minimum": 1,
+              "default": 12,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeSearch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/knowledge/documents/{document_id}": {
+      "get": {
+        "tags": [
+          "knowledge"
+        ],
+        "summary": "Knowledge Document",
+        "operationId": "knowledge_document_api_v1_knowledge_documents__document_id__get",
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LegalDocument"
+                }
+              }
+            }
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/status": {
+      "get": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "Настройки AI и локальный счётчик, без вызова модели",
+        "operationId": "ai_status_api_v1_ai_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIStatus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai/turn": {
+      "post": {
+        "tags": [
+          "ai"
+        ],
+        "summary": "AI-диалог: кандидаты фактов, подтверждение и объяснение источников",
+        "operationId": "ai_turn_api_v1_ai_turn_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AIRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AIResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Gateway Timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/salary-delay/documents/draft": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Подготовить редактируемый черновик без LLM и отправки",
+        "operationId": "document_draft_api_v1_salary_delay_documents_draft_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentDraftRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentDraftResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/salary-delay/documents/export": {
+      "post": {
+        "tags": [
+          "documents"
+        ],
+        "summary": "Экспорт проверенного пользователем текста в PDF или DOCX",
+        "operationId": "document_export_api_v1_salary_delay_documents_export_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentExportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Файл по выбранному формату",
+            "content": {
+              "application/pdf": {},
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {}
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Register",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Login",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Credentials"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Me",
+        "operationId": "me_api_v1_auth_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Logout",
+        "operationId": "logout_api_v1_auth_logout_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/account/state": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Read State",
+        "operationId": "read_state_api_v1_account_state_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateRead"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "account"
+        ],
+        "summary": "Write State",
+        "operationId": "write_state_api_v1_account_state_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StateWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StateWritten"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AIRequest": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "client_message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Message Id"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalaryStateIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/ExtractedFact"
+            },
+            "type": "array",
+            "maxItems": 18,
+            "title": "Candidates"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "message",
+              "accept",
+              "dismiss",
+              "confirm"
+            ],
+            "title": "Action",
+            "default": "message"
+          },
+          "as_of_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of Date"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/ContextMessageIn"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "History"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "client_message_id",
+          "message"
+        ],
+        "title": "AIRequest"
+      },
+      "AIResponse": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "client_message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Message Id"
+          },
+          "message": {
+            "$ref": "#/components/schemas/AssistantMessageOut"
+          },
+          "mode": {
+            "type": "string",
+            "const": "ai",
+            "title": "Mode"
+          },
+          "case": {
+            "$ref": "#/components/schemas/SalaryCaseOut"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/CandidateOut"
+            },
+            "type": "array",
+            "title": "Candidates"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceExcerpt"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "prompt_version": {
+            "type": "string",
+            "title": "Prompt Version"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "client_message_id",
+          "message",
+          "mode",
+          "case",
+          "candidates",
+          "sources",
+          "prompt_version",
+          "request_id"
+        ],
+        "title": "AIResponse"
+      },
+      "AIStatus": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          },
+          "connection_verified": {
+            "type": "boolean",
+            "const": false,
+            "title": "Connection Verified",
+            "default": false
+          },
+          "usage": {
+            "$ref": "#/components/schemas/UsageOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provider",
+          "model",
+          "configured",
+          "usage"
+        ],
+        "title": "AIStatus"
+      },
+      "AnalysisFact": {
+        "properties": {
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "AnalysisFact"
+      },
+      "AnalysisFinding": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "supports",
+              "attention",
+              "missing",
+              "info"
+            ],
+            "title": "Status"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisFact"
+            },
+            "type": "array",
+            "title": "Facts"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "status",
+          "explanation",
+          "facts",
+          "source_ids"
+        ],
+        "title": "AnalysisFinding"
+      },
+      "AnalysisItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "source_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "text",
+          "source_ids"
+        ],
+        "title": "AnalysisItem"
+      },
+      "AnalysisOptions": {
+        "properties": {
+          "deadline_mode": {
+            "type": "string",
+            "enum": [
+              "unverified",
+              "already_adjusted",
+              "federal_five_day"
+            ],
+            "title": "Deadline Mode",
+            "default": "unverified"
+          },
+          "amount_basis": {
+            "type": "string",
+            "enum": [
+              "unknown",
+              "accrued"
+            ],
+            "title": "Amount Basis",
+            "default": "unknown"
+          },
+          "payment_history_complete": {
+            "type": "boolean",
+            "title": "Payment History Complete",
+            "default": false
+          },
+          "payments": {
+            "items": {
+              "$ref": "#/components/schemas/PaymentIn"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Payments"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AnalysisOptions"
+      },
+      "AnalysisRequest": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SalaryStateIn"
+          },
+          "options": {
+            "$ref": "#/components/schemas/AnalysisOptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "state"
+        ],
+        "title": "AnalysisRequest"
+      },
+      "AnalysisResponse": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "analysis": {
+            "$ref": "#/components/schemas/SalaryAnalysisOut"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "analysis",
+          "request_id"
+        ],
+        "title": "AnalysisResponse"
+      },
       "AssistantMessageOut": {
         "properties": {
           "id": {
@@ -112,6 +1043,159 @@
           "created_at"
         ],
         "title": "AssistantMessageOut"
+      },
+      "CandidateOut": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "jurisdiction",
+              "employment_type",
+              "work_status",
+              "dismissal_date",
+              "payment_type",
+              "worked_last_day",
+              "settlement_requested",
+              "settlement_request_date",
+              "period",
+              "due_date",
+              "due_source",
+              "expected_amount",
+              "payment_status",
+              "received_amount",
+              "last_payment_date",
+              "documents",
+              "employer_contact",
+              "reported_delay_days"
+            ],
+            "title": "Field"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "display_value": {
+            "type": "string",
+            "title": "Display Value"
+          },
+          "previous_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "field",
+          "value",
+          "evidence",
+          "label",
+          "display_value",
+          "previous_value"
+        ],
+        "title": "CandidateOut"
+      },
+      "CaseMetrics": {
+        "properties": {
+          "delay_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Days"
+          },
+          "remaining_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Amount"
+          },
+          "as_of_date": {
+            "type": "string",
+            "title": "As Of Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "delay_days",
+          "remaining_amount",
+          "as_of_date"
+        ],
+        "title": "CaseMetrics"
+      },
+      "CaseProgress": {
+        "properties": {
+          "answered": {
+            "type": "integer",
+            "title": "Answered"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "answered",
+          "total"
+        ],
+        "title": "CaseProgress"
+      },
+      "CaseSummaryRow": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "label",
+          "value"
+        ],
+        "title": "CaseSummaryRow"
       },
       "ChatRequest": {
         "properties": {
@@ -184,6 +1268,526 @@
         ],
         "title": "ChatResponse"
       },
+      "CloudConversation": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Title"
+          },
+          "createdAt": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Updatedat"
+          },
+          "draft": {
+            "type": "string",
+            "maxLength": 20000,
+            "title": "Draft"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/CloudMessage"
+            },
+            "type": "array",
+            "maxItems": 2000,
+            "title": "Messages"
+          },
+          "scenario": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "salary_delay"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario"
+          },
+          "salaryCase": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalaryCaseOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assistantMode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ai",
+                  "guided"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assistantmode"
+          },
+          "aiCandidates": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CandidateOut"
+                },
+                "type": "array",
+                "maxItems": 30
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aicandidates"
+          },
+          "salaryAnalysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SavedAnalysis"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documentDrafts": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CloudDocument"
+                },
+                "type": "array",
+                "maxItems": 10
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Documentdrafts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "createdAt",
+          "updatedAt",
+          "draft",
+          "messages"
+        ],
+        "title": "CloudConversation"
+      },
+      "CloudDocument": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
+            "title": "Id"
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "labor_inspectorate"
+            ],
+            "title": "Template"
+          },
+          "templateVersion": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Templateversion"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 30000,
+            "title": "Text"
+          },
+          "details": {
+            "$ref": "#/components/schemas/LetterDetails"
+          },
+          "caseFingerprint": {
+            "type": "string",
+            "maxLength": 32000,
+            "title": "Casefingerprint"
+          },
+          "createdAt": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Updatedat"
+          },
+          "reviewed": {
+            "type": "boolean",
+            "title": "Reviewed"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Warnings"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/LegalSource"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Sources"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "template",
+          "templateVersion",
+          "title",
+          "text",
+          "details",
+          "caseFingerprint",
+          "createdAt",
+          "updatedAt",
+          "reviewed",
+          "warnings",
+          "sources"
+        ],
+        "title": "CloudDocument"
+      },
+      "CloudMessage": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Id"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 20000,
+            "title": "Content"
+          },
+          "createdAt": {
+            "type": "string",
+            "maxLength": 50,
+            "title": "Createdat"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "sent",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "inReplyTo": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Inreplyto"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "stub",
+                  "guided",
+                  "ai"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mode"
+          },
+          "scenarioAction": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalaryAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "aiAction": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "message",
+                  "accept",
+                  "dismiss",
+                  "confirm"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aiaction"
+          },
+          "sources": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SourceExcerpt"
+                },
+                "type": "array",
+                "maxItems": 20
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sources"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "content",
+          "createdAt",
+          "status"
+        ],
+        "title": "CloudMessage"
+      },
+      "CloudSettings": {
+        "properties": {
+          "apiUrl": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Apiurl"
+          },
+          "theme": {
+            "type": "string",
+            "enum": [
+              "system",
+              "light",
+              "dark"
+            ],
+            "title": "Theme"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "apiUrl",
+          "theme"
+        ],
+        "title": "CloudSettings"
+      },
+      "CloudState": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "const": 3,
+            "title": "Version"
+          },
+          "conversations": {
+            "items": {
+              "$ref": "#/components/schemas/CloudConversation"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Conversations"
+          },
+          "activeId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Activeid"
+          },
+          "newDraft": {
+            "type": "string",
+            "maxLength": 20000,
+            "title": "Newdraft"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/CloudSettings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version",
+          "conversations",
+          "activeId",
+          "newDraft",
+          "settings"
+        ],
+        "title": "CloudState"
+      },
+      "CompensationOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "calculated",
+              "not_needed",
+              "unavailable"
+            ],
+            "title": "Status"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "explanation": {
+            "type": "string",
+            "title": "Explanation"
+          },
+          "formula": {
+            "type": "string",
+            "title": "Formula"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/CompensationSegment"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "rate_source_url": {
+            "type": "string",
+            "title": "Rate Source Url"
+          },
+          "rates_checked_through": {
+            "type": "string",
+            "title": "Rates Checked Through"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "amount",
+          "explanation",
+          "formula",
+          "segments",
+          "missing",
+          "rate_source_url",
+          "rates_checked_through"
+        ],
+        "title": "CompensationOut"
+      },
+      "CompensationSegment": {
+        "properties": {
+          "start": {
+            "type": "string",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "title": "End"
+          },
+          "days": {
+            "type": "integer",
+            "title": "Days"
+          },
+          "principal": {
+            "type": "string",
+            "title": "Principal"
+          },
+          "rate_percent": {
+            "type": "string",
+            "title": "Rate Percent"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "start",
+          "end",
+          "days",
+          "principal",
+          "rate_percent",
+          "amount"
+        ],
+        "title": "CompensationSegment"
+      },
       "ContextMessageIn": {
         "properties": {
           "role": {
@@ -208,6 +1812,315 @@
           "content"
         ],
         "title": "ContextMessageIn"
+      },
+      "CorpusStatus": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "checked_on": {
+            "type": "string",
+            "title": "Checked On"
+          },
+          "documents": {
+            "type": "integer",
+            "title": "Documents"
+          },
+          "chunks": {
+            "type": "integer",
+            "title": "Chunks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "checked_on",
+          "documents",
+          "chunks"
+        ],
+        "title": "CorpusStatus"
+      },
+      "Credentials": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 3,
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]*$",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "format": "password",
+            "title": "Password",
+            "writeOnly": true
+          },
+          "device": {
+            "type": "string",
+            "enum": [
+              "web",
+              "native"
+            ],
+            "title": "Device",
+            "default": "web"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "username",
+          "password"
+        ],
+        "title": "Credentials"
+      },
+      "DeadlineOut": {
+        "properties": {
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis"
+          },
+          "delay_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delay Days"
+          },
+          "calendar_source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calendar Source Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "date",
+          "basis",
+          "delay_days",
+          "calendar_source_url"
+        ],
+        "title": "DeadlineOut"
+      },
+      "DocumentChunk": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "start_offset": {
+            "type": "integer",
+            "title": "Start Offset"
+          },
+          "end_offset": {
+            "type": "integer",
+            "title": "End Offset"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "position",
+          "start_offset",
+          "end_offset",
+          "text"
+        ],
+        "title": "DocumentChunk"
+      },
+      "DocumentDraftRequest": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "labor_inspectorate"
+            ],
+            "title": "Template"
+          },
+          "state": {
+            "$ref": "#/components/schemas/SalaryStateIn"
+          },
+          "analysis_options": {
+            "$ref": "#/components/schemas/AnalysisOptions"
+          },
+          "details": {
+            "$ref": "#/components/schemas/LetterDetails"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "document_id",
+          "template",
+          "state",
+          "details"
+        ],
+        "title": "DocumentDraftRequest"
+      },
+      "DocumentDraftResponse": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "labor_inspectorate"
+            ],
+            "title": "Template"
+          },
+          "template_version": {
+            "type": "string",
+            "title": "Template Version"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/LegalSource"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "document_id",
+          "template",
+          "template_version",
+          "title",
+          "text",
+          "missing",
+          "warnings",
+          "sources",
+          "created_at",
+          "request_id"
+        ],
+        "title": "DocumentDraftResponse"
+      },
+      "DocumentExportRequest": {
+        "properties": {
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Document Id"
+          },
+          "template": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "labor_inspectorate"
+            ],
+            "title": "Template"
+          },
+          "format": {
+            "type": "string",
+            "enum": [
+              "pdf",
+              "docx"
+            ],
+            "title": "Format"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 30000,
+            "minLength": 80,
+            "title": "Text"
+          },
+          "reviewed": {
+            "type": "boolean",
+            "title": "Reviewed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document_id",
+          "template",
+          "format",
+          "text",
+          "reviewed"
+        ],
+        "title": "DocumentExportRequest"
       },
       "ErrorBody": {
         "properties": {
@@ -269,6 +2182,72 @@
         ],
         "title": "ErrorResponse"
       },
+      "ExtractedFact": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "jurisdiction",
+              "employment_type",
+              "work_status",
+              "dismissal_date",
+              "payment_type",
+              "worked_last_day",
+              "settlement_requested",
+              "settlement_request_date",
+              "period",
+              "due_date",
+              "due_source",
+              "expected_amount",
+              "payment_status",
+              "received_amount",
+              "last_payment_date",
+              "documents",
+              "employer_contact",
+              "reported_delay_days"
+            ],
+            "title": "Field"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "field",
+          "value",
+          "evidence"
+        ],
+        "title": "ExtractedFact"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
       "HealthResponse": {
         "properties": {
           "status": {
@@ -289,6 +2268,22 @@
             "type": "string",
             "const": "stub",
             "title": "Reply Mode"
+          },
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Capabilities",
+            "default": [
+              "salary_delay_v1",
+              "knowledge_fts5",
+              "ai_chat_v1",
+              "salary_analysis_v1",
+              "salary_documents_v1",
+              "accounts_v1",
+              "account_sync_v1"
+            ]
           }
         },
         "type": "object",
@@ -298,6 +2293,1143 @@
           "reply_mode"
         ],
         "title": "HealthResponse"
+      },
+      "KnowledgeIndex": {
+        "properties": {
+          "corpus": {
+            "$ref": "#/components/schemas/CorpusStatus"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/LegalSource"
+            },
+            "type": "array",
+            "title": "Documents"
+          }
+        },
+        "type": "object",
+        "required": [
+          "corpus",
+          "documents"
+        ],
+        "title": "KnowledgeIndex"
+      },
+      "KnowledgeSearch": {
+        "properties": {
+          "corpus": {
+            "$ref": "#/components/schemas/CorpusStatus"
+          },
+          "query": {
+            "type": "string",
+            "title": "Query"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "corpus",
+          "query",
+          "results"
+        ],
+        "title": "KnowledgeSearch"
+      },
+      "LegalDocument": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "citation": {
+            "type": "string",
+            "title": "Citation"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "publisher": {
+            "type": "string",
+            "title": "Publisher"
+          },
+          "edition": {
+            "type": "string",
+            "title": "Edition"
+          },
+          "checked_on": {
+            "type": "string",
+            "title": "Checked On"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "normative",
+              "expert"
+            ],
+            "title": "Source Type"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "chunks": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentChunk"
+            },
+            "type": "array",
+            "title": "Chunks"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "citation",
+          "title",
+          "source_url",
+          "publisher",
+          "edition",
+          "checked_on",
+          "source_type",
+          "sha256",
+          "text",
+          "chunks"
+        ],
+        "title": "LegalDocument"
+      },
+      "LegalSource": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "citation": {
+            "type": "string",
+            "title": "Citation"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "publisher": {
+            "type": "string",
+            "title": "Publisher"
+          },
+          "edition": {
+            "type": "string",
+            "title": "Edition"
+          },
+          "checked_on": {
+            "type": "string",
+            "title": "Checked On"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "normative",
+              "expert"
+            ],
+            "title": "Source Type"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "citation",
+          "title",
+          "source_url",
+          "publisher",
+          "edition",
+          "checked_on",
+          "source_type",
+          "sha256"
+        ],
+        "title": "LegalSource"
+      },
+      "LetterDetails": {
+        "properties": {
+          "document_date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "title": "Document Date"
+          },
+          "applicant_name": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Applicant Name",
+            "default": ""
+          },
+          "applicant_address": {
+            "type": "string",
+            "maxLength": 600,
+            "title": "Applicant Address",
+            "default": ""
+          },
+          "applicant_contact": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Applicant Contact",
+            "default": ""
+          },
+          "employer_name": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Employer Name",
+            "default": ""
+          },
+          "employer_address": {
+            "type": "string",
+            "maxLength": 600,
+            "title": "Employer Address",
+            "default": ""
+          },
+          "inspectorate_name": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Inspectorate Name",
+            "default": ""
+          },
+          "job_title": {
+            "type": "string",
+            "maxLength": 300,
+            "title": "Job Title",
+            "default": ""
+          },
+          "additional_facts": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Additional Facts",
+            "default": ""
+          },
+          "attachments": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Attachments",
+            "default": ""
+          },
+          "request_compensation": {
+            "type": "boolean",
+            "title": "Request Compensation",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "document_date"
+        ],
+        "title": "LetterDetails"
+      },
+      "PaymentIn": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "title": "Date"
+          },
+          "amount": {
+            "type": "string",
+            "pattern": "^\\d{1,10}(?:\\.\\d{1,2})?$",
+            "title": "Amount"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "date",
+          "amount"
+        ],
+        "title": "PaymentIn"
+      },
+      "QuestionOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "QuestionOption"
+      },
+      "QuestionOut": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "title": "Field"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "prompt": {
+            "type": "string",
+            "title": "Prompt"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "choice",
+              "multi",
+              "date",
+              "money",
+              "text"
+            ],
+            "title": "Kind"
+          },
+          "hint": {
+            "type": "string",
+            "title": "Hint"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOption"
+            },
+            "type": "array",
+            "title": "Options"
+          },
+          "allow_unknown": {
+            "type": "boolean",
+            "title": "Allow Unknown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "field",
+          "label",
+          "prompt",
+          "kind",
+          "hint",
+          "options",
+          "allow_unknown"
+        ],
+        "title": "QuestionOut"
+      },
+      "RuleReferenceOut": {
+        "properties": {
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "valid_from": {
+            "type": "string",
+            "title": "Valid From"
+          },
+          "checked_through": {
+            "type": "string",
+            "title": "Checked Through"
+          },
+          "legal_reviewed": {
+            "type": "boolean",
+            "title": "Legal Reviewed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version",
+          "valid_from",
+          "checked_through",
+          "legal_reviewed"
+        ],
+        "title": "RuleReferenceOut"
+      },
+      "SalaryAction": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "start",
+              "answer",
+              "edit",
+              "confirm",
+              "refresh"
+            ],
+            "title": "Kind"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "SalaryAction"
+      },
+      "SalaryAnalysisOut": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "needs_confirmation",
+              "outside_scope",
+              "needs_review",
+              "needs_facts",
+              "possible_delay",
+              "paid_late",
+              "no_delay_detected"
+            ],
+            "title": "Status"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "as_of_date": {
+            "type": "string",
+            "title": "As Of Date"
+          },
+          "data_quality": {
+            "type": "string",
+            "enum": [
+              "sufficient",
+              "limited",
+              "insufficient"
+            ],
+            "title": "Data Quality"
+          },
+          "data_quality_explanation": {
+            "type": "string",
+            "title": "Data Quality Explanation"
+          },
+          "missing": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Missing"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisFinding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "deadline": {
+            "$ref": "#/components/schemas/DeadlineOut"
+          },
+          "remaining_amount": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remaining Amount"
+          },
+          "compensation": {
+            "$ref": "#/components/schemas/CompensationOut"
+          },
+          "next_steps": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisItem"
+            },
+            "type": "array",
+            "title": "Next Steps"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisItem"
+            },
+            "type": "array",
+            "title": "Documents"
+          },
+          "lawyer_reasons": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lawyer Reasons"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/LegalSource"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "corpus": {
+            "$ref": "#/components/schemas/CorpusStatus"
+          },
+          "rules": {
+            "$ref": "#/components/schemas/RuleReferenceOut"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Limitations"
+          },
+          "disclaimer": {
+            "type": "string",
+            "title": "Disclaimer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "title",
+          "summary",
+          "as_of_date",
+          "data_quality",
+          "data_quality_explanation",
+          "missing",
+          "findings",
+          "deadline",
+          "remaining_amount",
+          "compensation",
+          "next_steps",
+          "documents",
+          "lawyer_reasons",
+          "sources",
+          "corpus",
+          "rules",
+          "limitations",
+          "disclaimer"
+        ],
+        "title": "SalaryAnalysisOut"
+      },
+      "SalaryCaseOut": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Version"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "answers": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Answers"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "collecting",
+              "review",
+              "complete",
+              "outside_scope"
+            ],
+            "title": "Status"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/QuestionOut"
+            },
+            "type": "array",
+            "title": "Fields"
+          },
+          "progress": {
+            "$ref": "#/components/schemas/CaseProgress"
+          },
+          "summary": {
+            "items": {
+              "$ref": "#/components/schemas/CaseSummaryRow"
+            },
+            "type": "array",
+            "title": "Summary"
+          },
+          "notices": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notices"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/CaseMetrics"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SourceExcerpt"
+            },
+            "type": "array",
+            "title": "Sources"
+          },
+          "corpus": {
+            "$ref": "#/components/schemas/CorpusStatus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "version",
+          "description",
+          "answers",
+          "confirmed",
+          "status",
+          "question",
+          "fields",
+          "progress",
+          "summary",
+          "notices",
+          "metrics",
+          "sources",
+          "corpus"
+        ],
+        "title": "SalaryCaseOut"
+      },
+      "SalaryRequest": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "client_message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Message Id"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalaryStateIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "action": {
+            "$ref": "#/components/schemas/SalaryAction"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "client_message_id",
+          "message",
+          "action"
+        ],
+        "title": "SalaryRequest"
+      },
+      "SalaryResponse": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "client_message_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Message Id"
+          },
+          "message": {
+            "$ref": "#/components/schemas/AssistantMessageOut"
+          },
+          "mode": {
+            "type": "string",
+            "const": "guided",
+            "title": "Mode"
+          },
+          "case": {
+            "$ref": "#/components/schemas/SalaryCaseOut"
+          },
+          "request_id": {
+            "type": "string",
+            "title": "Request Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "client_message_id",
+          "message",
+          "mode",
+          "case",
+          "request_id"
+        ],
+        "title": "SalaryResponse"
+      },
+      "SalaryStateIn": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Version"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Description",
+            "default": ""
+          },
+          "answers": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4000
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "maxProperties": 24,
+            "title": "Answers"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "version",
+          "answers"
+        ],
+        "title": "SalaryStateIn"
+      },
+      "SavedAnalysis": {
+        "properties": {
+          "caseFingerprint": {
+            "type": "string",
+            "maxLength": 32000,
+            "title": "Casefingerprint"
+          },
+          "options": {
+            "$ref": "#/components/schemas/AnalysisOptions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "caseFingerprint",
+          "options"
+        ],
+        "title": "SavedAnalysis"
+      },
+      "SearchHit": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "citation": {
+            "type": "string",
+            "title": "Citation"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "publisher": {
+            "type": "string",
+            "title": "Publisher"
+          },
+          "edition": {
+            "type": "string",
+            "title": "Edition"
+          },
+          "checked_on": {
+            "type": "string",
+            "title": "Checked On"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "normative",
+              "expert"
+            ],
+            "title": "Source Type"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "chunk_id": {
+            "type": "string",
+            "title": "Chunk Id"
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt"
+          },
+          "position": {
+            "type": "integer",
+            "title": "Position"
+          },
+          "rank": {
+            "type": "number",
+            "title": "Rank"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "citation",
+          "title",
+          "source_url",
+          "publisher",
+          "edition",
+          "checked_on",
+          "source_type",
+          "sha256",
+          "chunk_id",
+          "excerpt",
+          "position",
+          "rank"
+        ],
+        "title": "SearchHit"
+      },
+      "SessionOut": {
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/UserOut"
+          },
+          "token": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "user",
+          "expires_at"
+        ],
+        "title": "SessionOut"
+      },
+      "SourceExcerpt": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "citation": {
+            "type": "string",
+            "title": "Citation"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "source_url": {
+            "type": "string",
+            "title": "Source Url"
+          },
+          "publisher": {
+            "type": "string",
+            "title": "Publisher"
+          },
+          "edition": {
+            "type": "string",
+            "title": "Edition"
+          },
+          "checked_on": {
+            "type": "string",
+            "title": "Checked On"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": [
+              "normative",
+              "expert"
+            ],
+            "title": "Source Type"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "chunk_id": {
+            "type": "string",
+            "title": "Chunk Id"
+          },
+          "excerpt": {
+            "type": "string",
+            "title": "Excerpt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "citation",
+          "title",
+          "source_url",
+          "publisher",
+          "edition",
+          "checked_on",
+          "source_type",
+          "sha256",
+          "chunk_id",
+          "excerpt"
+        ],
+        "title": "SourceExcerpt"
+      },
+      "StateRead": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CloudState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "state",
+          "updated_at"
+        ],
+        "title": "StateRead"
+      },
+      "StateWrite": {
+        "properties": {
+          "base_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Base Revision"
+          },
+          "state": {
+            "$ref": "#/components/schemas/CloudState"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "base_revision",
+          "state"
+        ],
+        "title": "StateWrite"
+      },
+      "StateWritten": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "updated_at"
+        ],
+        "title": "StateWritten"
+      },
+      "UsageOut": {
+        "properties": {
+          "day_utc": {
+            "type": "string",
+            "title": "Day Utc"
+          },
+          "calls": {
+            "type": "integer",
+            "title": "Calls"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          }
+        },
+        "type": "object",
+        "required": [
+          "day_utc",
+          "calls",
+          "limit"
+        ],
+        "title": "UsageOut"
+      },
+      "UserOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "created_at"
+        ],
+        "title": "UserOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }
